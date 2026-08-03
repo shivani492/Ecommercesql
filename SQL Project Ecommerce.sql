@@ -194,3 +194,39 @@ SELECT *
 FROM cte
 WHERE order_number % 3 = 0;
 
+-----Q6---"Find customers who placed more than one order and all of their orders used a promo code."
+
+SELECT Customer_code,
+       COUNT(*) AS no_of_orders,
+       COUNT(Promo_code_Name) AS promo_orders
+FROM orders
+GROUP BY Customer_code
+HAVING COUNT(*) > 1
+   AND COUNT(*) = COUNT(Promo_code_Name);
+
+----Q7---What percent of customers were organically acquired in January 2025?
+
+---Organic customer = A customer whose first order was placed without using a promo code.
+
+WITH cte AS
+(
+    SELECT *,
+           ROW_NUMBER() OVER
+           (
+               PARTITION BY customer_code
+               ORDER BY placed_at
+           ) AS rn
+    FROM orders
+    WHERE MONTH(placed_at) = 1
+)
+
+SELECT
+    COUNT(
+        CASE
+            WHEN rn = 1
+             AND promo_code_name IS NULL
+            THEN customer_code
+        END
+    ) * 100.0
+    / COUNT(DISTINCT customer_code) AS organic_percentage
+FROM cte;
